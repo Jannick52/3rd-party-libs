@@ -1,0 +1,34 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+# lib source is set to "@mavsdk//:all_srcs",
+# which means it's looking for a target named all_srcs in the root of the mavsdk external repository.
+# If this target does not exist, it will output an error message.
+# Since MAVSDK is fetching its dependencies through git,
+# we need to activate the network access by adding the "requires-network" tag.
+# Lastly, we don't need to fetch the libraries used for testing,
+# so we set the "BUILD_TESTS" cache entry to "OFF".
+cmake(
+    name = "mavsdk",
+    cache_entries = {
+        "BUILD_MAVSDK_SERVER": "OFF",
+        "BUILD_TESTS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "DBUILD_SHARED_LIBS:": "OFF",
+    },
+    lib_source = "@mavsdk//:all_srcs",
+    out_include_dir = "include/mavsdk",
+    # The cmake rule is producing libmavsdk.so, libmavsdk.so.2, and libmavsdk.so.0.0.0.
+    # libmavsdk.so.0.0.0 is the actual shared library, and the other two are symbolic links.
+    out_shared_libs = [
+        "libmavsdk.so",
+        "libmavsdk.so.0.0.0",
+    ],
+    tags = ["requires-network"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
